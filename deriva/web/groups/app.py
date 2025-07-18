@@ -46,8 +46,7 @@ def configure_authn_env() -> None:
         Path("/etc/deriva/deriva-groups.env"),
         Path.home() / "deriva-groups.env",
         Path("./config/deriva-groups.env"),
-        Path("./deriva-groups.env"),
-        Path("./.env"),
+        Path("./deriva-groups.env")
     ]
     for fn in dotenv_locations:
         if fn.is_file():
@@ -110,9 +109,11 @@ def create_app():
     # Service-specific initialization
     init_group_management(app)
 
-    # Setup CORS and basic routes
+    # Setup CORS
     setup_cors(app)
-    setup_basic_routes(app)
+
+    if app.config.get("ENABLE_HEALTH_CHECK", True):
+        enable_healthcheck(app)
 
     return app
 
@@ -190,11 +191,10 @@ def setup_cors(app):
         CORS(app, origins=default_origins, supports_credentials=True)
 
 
-def setup_basic_routes(app):
-    """Setup basic routes for health checks"""
+def enable_healthcheck(app):
     @app.route('/health')
     def health_check():
-        """Health check endpoint for load balancers"""
+        """Health check endpoint for load balancers or other orchestration"""
         return jsonify({"status": "healthy", "service": "deriva-groups"}), 200
 
 
