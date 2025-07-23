@@ -43,10 +43,10 @@ def configure_authn_env() -> None:
     """
     # Load .env from one of these locations, if it exists
     dotenv_locations = [
-        Path("/etc/deriva/deriva-groups.env"),
-        Path.home() / "deriva-groups.env",
-        Path("./config/deriva-groups.env"),
-        Path("./deriva-groups.env")
+        Path("/etc/deriva/deriva_groups.env"),
+        Path.home() / "deriva_groups.env",
+        Path("./config/deriva_groups.env"),
+        Path("./deriva_groups.env")
     ]
     for fn in dotenv_locations:
         if fn.is_file():
@@ -120,7 +120,7 @@ def create_app():
 def init_group_management(app):
     # Initialize group management
     storage_backend = create_storage_backend(app.config.get("STORAGE_BACKEND", "memory"),
-                                             url=app.config.get("STORAGE_BACKEND_URL"))
+                                             app.config.get("STORAGE_BACKEND_URL"))
     storage = Storage(storage_backend)
 
     auth_base_url = app.config.get('AUTH_BASE_URL', '/authn')

@@ -37,10 +37,12 @@ def _prepare_for_json(obj):
             data[key] = value.value
     return data
 
-def create_storage_backend(backend_name: str, **kwargs) -> StorageBackend:
+
+def create_storage_backend(backend_name: str, *args, **kwargs) -> StorageBackend:
     backend_class = STORAGE_BACKENDS[backend_name]
     logger.debug(f"Creating storage backend type '{backend_name}' with implementation '{backend_class}'")
-    return import_string(backend_class)(**kwargs)
+    return import_string(backend_class)(*args, **kwargs)
+
 
 class Storage:
     def __init__(self, backend: StorageBackend = MemoryBackend(), ttl=None):
@@ -97,17 +99,17 @@ class Storage:
         # Delete the group
         group_key = self._key(self.groups_prefix, group_id)
         self.backend.delete(group_key)
-        
+
         # Delete all memberships for this group
         memberships = self.get_group_memberships(group_id)
         for membership in memberships:
             self.remove_membership(group_id, membership.user_id)
-        
+
         # Delete all invitations for this group
         invitations = self.get_group_invitations(group_id)
         for invitation in invitations:
             self.delete_invitation(invitation.id)
-        
+
         logger.debug(f"Deleted group {group_id}")
 
     def list_groups(self) -> List[Group]:
@@ -131,20 +133,21 @@ class Storage:
         membership_key = self._key(self.memberships_prefix, f"{membership.group_id}:{membership.user_id}")
         membership_data = json.dumps(_prepare_for_json(membership))
         self.backend.set(membership_key, membership_data)  # Persistent storage, no TTL
-        
+
         # Update user's groups index
         user_groups_key = self._key(self.user_groups_prefix, membership.user_id)
         user_groups = self._get_string_set(user_groups_key)
         user_groups.add(membership.group_id)
         self._set_string_set(user_groups_key, user_groups)
-        
+
         # Update group members index
         group_members_key = self._key(self.group_members_prefix, membership.group_id)
         group_members = self._get_string_set(group_members_key)
         group_members.add(membership.user_id)
         self._set_string_set(group_members_key, group_members)
-        
-        logger.debug(f"Added user {membership.user_id} to group {membership.group_id} with role {membership.role.value}")
+
+        logger.debug(
+            f"Added user {membership.user_id} to group {membership.group_id} with role {membership.role.value}")
 
     def get_membership(self, group_id: str, user_id: str) -> Optional[GroupMembership]:
         """Get a specific group membership"""
@@ -172,26 +175,26 @@ class Storage:
         # Remove membership
         membership_key = self._key(self.memberships_prefix, f"{group_id}:{user_id}")
         self.backend.delete(membership_key)
-        
+
         # Update user's groups index
         user_groups_key = self._key(self.user_groups_prefix, user_id)
         user_groups = self._get_string_set(user_groups_key)
         user_groups.discard(group_id)
         self._set_string_set(user_groups_key, user_groups)
-        
+
         # Update group members index
         group_members_key = self._key(self.group_members_prefix, group_id)
         group_members = self._get_string_set(group_members_key)
         group_members.discard(user_id)
         self._set_string_set(group_members_key, group_members)
-        
+
         logger.debug(f"Removed user {user_id} from group {group_id}")
 
     def get_user_memberships(self, user_id: str) -> List[GroupMembership]:
         """Get all group memberships for a user"""
         user_groups_key = self._key(self.user_groups_prefix, user_id)
         group_ids = self._get_string_set(user_groups_key)
-        
+
         memberships = []
         for group_id in group_ids:
             membership = self.get_membership(group_id, user_id)
@@ -203,7 +206,7 @@ class Storage:
         """Get all memberships for a group"""
         group_members_key = self._key(self.group_members_prefix, group_id)
         user_ids = self._get_string_set(group_members_key)
-        
+
         memberships = []
         for user_id in user_ids:
             membership = self.get_membership(group_id, user_id)
@@ -216,16 +219,16 @@ class Storage:
         """Create a new group invitation"""
         invitation_key = self._key(self.invitations_prefix, invitation.id)
         invitation_data = json.dumps(_prepare_for_json(invitation))
-        
+
         # Store invitation with expiry
         ttl = int(invitation.expires_at - time.time())
         if ttl > 0:
             self.backend.setex(invitation_key, invitation_data, ttl)
-            
+
             # Create token mapping for easy lookup
             token_key = self._key(self.invitation_tokens_prefix, invitation.token)
             self.backend.setex(token_key, invitation.id, ttl)
-            
+
             logger.debug(f"Created invitation {invitation.id} for {invitation.email} to group {invitation.group_id}")
 
     def get_invitation(self, invitation_id: str) -> Optional[GroupInvitation]:
@@ -254,7 +257,7 @@ class Storage:
         """Update an existing invitation"""
         invitation_key = self._key(self.invitations_prefix, invitation.id)
         invitation_data = json.dumps(_prepare_for_json(invitation))
-        
+
         # Calculate remaining TTL
         ttl = int(invitation.expires_at - time.time())
         if ttl > 0:
@@ -273,7 +276,7 @@ class Storage:
             # Delete token mapping
             token_key = self._key(self.invitation_tokens_prefix, invitation.token)
             self.backend.delete(token_key)
-        
+
         # Delete invitation
         invitation_key = self._key(self.invitations_prefix, invitation_id)
         self.backend.delete(invitation_key)
