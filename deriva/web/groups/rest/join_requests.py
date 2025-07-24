@@ -109,7 +109,7 @@ def approve_join_request(group_id, request_id):
     if not membership:
         abort(500, "Failed to add user to group after approval")
 
-    audit_event("join_request_approved", user=g.user_email, sub=g.user_id,
+    audit_event("join_request_approved", user=g.user_email, id=g.user_id,
                 group_id=group_id, request_id=request_id, requester_email=join_request.user_email, role=role.value)
 
     # Return the updated request and new membership
@@ -145,7 +145,7 @@ def deny_join_request(group_id, request_id):
     if not success:
         abort(400, error)
 
-    audit_event("join_request_denied", user=g.user_email, sub=g.user_id,
+    audit_event("join_request_denied", user=g.user_email, id=g.user_id,
                 group_id=group_id, request_id=request_id, requester_email=join_request.user_email)
 
     # Return the updated request
@@ -186,7 +186,7 @@ def cancel_join_request(request_id):
     if not success:
         abort(400, error)
 
-    audit_event("join_request_cancelled", user=g.user_email, sub=g.user_id,
+    audit_event("join_request_cancelled", user=g.user_email, id=g.user_id,
                 request_id=request_id)
 
     return make_json_response({"status": "cancelled"})
@@ -232,7 +232,7 @@ def create_join_request(group_id):
     if not join_request:
         abort(500, "Failed to create join request")
 
-    audit_event("join_request_created", user=g.user_email, sub=g.user_id,
+    audit_event("join_request_created", user=g.user_email, id=g.user_id,
                 group_id=group_id, request_id=join_request.id)
 
     # Return the join request with group info
@@ -318,7 +318,7 @@ def request_to_join_via_token(token):
     if not join_request:
         abort(500, "Failed to create join request")
 
-    audit_event("join_request_created_via_token", user=g.user_email, sub=g.user_id,
+    audit_event("join_request_created_via_token", user=g.user_email, id=g.user_id,
                 group_id=group_id, request_id=join_request.id, token=token)
 
     # Return the join request with group info

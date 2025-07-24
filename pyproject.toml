@@ -47,8 +47,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["deriva.*"]
+where = ["deriva"]
 
 [tool.setuptools]
 zip-safe = false

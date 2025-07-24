@@ -112,7 +112,7 @@ def create_group():
         added_by=g.user_id
     )
 
-    audit_event("group_created", user=g.user_email, sub=g.user_id, group_id=group.id, group_name=group.name)
+    audit_event("group_created", user=g.user_email, id=g.user_id, group_id=group.id, group_name=group.name)
 
     result = group.to_dict()
     result["membership"] = membership.to_dict() if membership else None
@@ -182,7 +182,7 @@ def update_group(group_id):
     if not group:
         abort(404, "Group not found")
 
-    audit_event("group_updated", user=g.user_email, sub=g.user_id,
+    audit_event("group_updated", user=g.user_email, id=g.user_id,
                 group_id=group_id, group_name=group.name)
 
     return make_json_response(group.to_dict())
@@ -206,7 +206,7 @@ def delete_group(group_id):
     success = group_manager.delete_group(group_id)
 
     if success:
-        audit_event("group_deleted", user=g.user_email, sub=g.user_id,
+        audit_event("group_deleted", user=g.user_email, id=g.user_id,
                     group_id=group_id, group_name=group_name)
         return make_json_response({"status": "deleted"})
     else:
@@ -263,7 +263,7 @@ def add_group_member(group_id):
     if not membership:
         abort(400, "Failed to add member (user may already be a member or group may not exist)")
 
-    audit_event("member_added", user=g.user_email, sub=g.user_id,
+    audit_event("member_added", user=g.user_email, id=g.user_id,
                 group_id=group_id, member_user_id=member_user_id, member_email=member_email, role=role.value)
 
     return make_json_response(membership.to_dict()), 201
@@ -306,7 +306,7 @@ def update_group_member(group_id):
     if not membership:
         abort(404, "Member not found")
 
-    audit_event("member_role_updated", user=g.user_email, sub=g.user_id,
+    audit_event("member_role_updated", user=g.user_email, id=g.user_id,
                 group_id=group_id, member_user_id=member_user_id, new_role=new_role.value)
 
     return make_json_response(membership.to_dict())
@@ -342,7 +342,7 @@ def remove_group_member(group_id):
     if not success:
         abort(404, "Member not found")
 
-    audit_event("member_removed", user=g.user_email, sub=g.user_id,
+    audit_event("member_removed", user=g.user_email, id=g.user_id,
                 group_id=group_id, member_user_id=member_user_id)
 
     return make_json_response({"status": "removed"})
@@ -417,7 +417,7 @@ def create_group_invitation(group_id):
     if invitation.status == InvitationStatus.FAILED:
         abort(502, "Failed to send invitation email. Contact system administrator.")
 
-    audit_event("invitation_created", user=g.user_email, sub=g.user_id,
+    audit_event("invitation_created", user=g.user_email, id=g.user_id,
                 group_id=group_id, invitation_email=email, role=role.value)
 
     return make_json_response(invitation.to_dict()), 201
@@ -438,7 +438,7 @@ def revoke_group_invitation(group_id, invitation_id):
     if not success:
         abort(404, "Invitation not found")
 
-    audit_event("invitation_revoked", user=g.user_email, sub=g.user_id,
+    audit_event("invitation_revoked", user=g.user_email, id=g.user_id,
                 group_id=group_id, invitation_id=invitation_id)
 
     return make_json_response({"status": "revoked"})
@@ -476,7 +476,7 @@ def accept_invitation(token):
     if not membership:
         abort(400, "Invalid or expired invitation")
 
-    audit_event("invitation_accepted", user=g.user_email, sub=g.user_id,
+    audit_event("invitation_accepted", user=g.user_email, id=g.user_id,
                 group_id=membership.group_id, role=membership.role.value)
 
     # Return membership with group info
