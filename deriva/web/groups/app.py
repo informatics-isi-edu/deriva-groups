@@ -120,7 +120,7 @@ def create_app():
 def init_group_management(app):
     # Initialize group management
     storage_backend = create_storage_backend(app.config.get("STORAGE_BACKEND", "memory"),
-                                             app.config.get("STORAGE_BACKEND_URL"))
+                                             url=app.config.get("STORAGE_BACKEND_URL"))
     storage = Storage(storage_backend)
 
     auth_base_url = app.config.get('AUTH_BASE_URL', '/authn')

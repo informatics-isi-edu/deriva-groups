@@ -38,10 +38,10 @@ def _prepare_for_json(obj):
     return data
 
 
-def create_storage_backend(backend_name: str, *args, **kwargs) -> StorageBackend:
+def create_storage_backend(backend_name: str, **kwargs) -> StorageBackend:
     backend_class = STORAGE_BACKENDS[backend_name]
     logger.debug(f"Creating storage backend type '{backend_name}' with implementation '{backend_class}'")
-    return import_string(backend_class)(*args, **kwargs)
+    return import_string(backend_class)(**kwargs)
 
 
 class Storage:
