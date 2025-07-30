@@ -14,7 +14,7 @@ endif
 
 HTTPDCONFDIR=/etc/$(HTTPSVC)/conf.d
 WSGISOCKETPREFIX=/var/run/$(HTTPSVC)/wsgi
-DAEMONUSER=deriva
+DAEMONUSER=derivagrps
 
 # turn off annoying built-ins
 .SUFFIXES:
