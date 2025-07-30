@@ -117,3 +117,6 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# build byproduct
+config/wsgi_deriva_groups.conf
