@@ -291,9 +291,11 @@ def require_auth(f):
             g.user_email = client.get("email")
             g.user_name = client.get("full_name")
         else:
-            g.user_id = user_session.get('sub')
-            g.user_email = user_session.get('email')
-            g.user_name = user_session.get('name')
+            sub = user_session.get("sub")
+            iss = user_session.get("iss")
+            g.user_id =  iss + "/" + user_session.get("sub") if iss else sub
+            g.user_email = user_session.get("email")
+            g.user_name = user_session.get("name")
 
         return f(*args, **kwargs)
 

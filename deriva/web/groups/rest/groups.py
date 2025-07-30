@@ -94,6 +94,14 @@ def create_group():
     if visibility not in ["public", "private"]:
         abort(400, "Visibility must be 'public' or 'private'")
 
+    # Check if group creation is permitted
+    ids = [g.user_id]
+    user_groups = group_manager.get_user_groups(g.user_id)
+    ids.extend([group[0].id for group in user_groups])
+    acl_list = current_app.config["GROUPS_CONFIG"].get("create_group_acl", [])
+    if not group_manager.can_create_group(ids, acl_list):
+        abort(403, "Group creation not permitted")
+
     # Create group
     group = group_manager.create_group(
         name=name,

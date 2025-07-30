@@ -30,6 +30,13 @@ class GroupManager:
         self.email_service = email_service
 
     # Group management
+    @staticmethod
+    def can_create_group(ids: Optional[List[str]], acl_list: Optional[List[str]]) -> bool:
+        """Check if any of the provided IDs match entries in the ACL list."""
+        if not ids or not acl_list:
+            return False
+        return any(i in acl_list for i in ids if i)
+
     def create_group(self, name: str, description: str = "", visibility: str = "private",
                      created_by: str = "", metadata: Dict = None) -> Group:
         """Create a new group"""

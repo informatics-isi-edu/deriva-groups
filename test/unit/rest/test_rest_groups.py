@@ -37,6 +37,7 @@ def app():
         'email': 'test@example.com',
         'name': 'Test User'
     }
+    app.config['GROUPS_CONFIG'] = {}
     app.config['SESSION_MANAGER'] = mock_session_manager
     app.config['GROUP_MANAGER'] = Mock()
     app.config['JOIN_REQUEST_MANAGER'] = Mock()
@@ -172,10 +173,12 @@ class TestGroupsBlueprint:
         assert 'membership' in data["groups"][1]
         assert data["groups"][0]['member_count'] == 1
 
-    def test_create_group(self, app, client, mock_auth):
+    def test_create_group(self, app, client, mock_auth, sample_groups, sample_memberships):
         """Test creating a new group"""
         mock_group_manager = app.config['GROUP_MANAGER']
-        
+        mock_group_manager.can_create_group.return_value = True
+        mock_group_manager.get_user_groups.return_value = [(sample_groups[0], sample_memberships[0])]
+
         new_group = Group(
             id="new_group_123",
             name="New Test Group",
