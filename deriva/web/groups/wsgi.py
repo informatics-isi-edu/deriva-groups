@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .app import create_app
+from deriva.web.groups.app import create_app
 
 application = create_app()
