@@ -42,8 +42,6 @@ config/wsgi_deriva_groups.conf: config/wsgi_deriva_groups.conf.in force
 
 uninstall: force
 		-pip3 uninstall -y deriva-groups
-		rm -rf /home/${DAEMONUSER}/groups/config
-		rm -f ${HTTPDCONFDIR}/wsgi_deriva_groups.conf
 
 force:
 
