@@ -67,8 +67,8 @@ class SessionManager:
     @staticmethod
     def _extract_authorization() -> (str, bool):
         auth = request.headers.get("Authorization")
-        if auth and auth.startswith("Bearer "):
-            return auth.split(" ", 1)[1], True
+        if auth and auth[:7].lower() == "bearer ":
+            return auth[7:], True
         cookie_name = current_app.config["COOKIE_NAME"]
         cookie_val = request.cookies.get(cookie_name)
         return cookie_val, False
