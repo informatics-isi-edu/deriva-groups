@@ -102,14 +102,10 @@ class TestEmailServiceCreation:
     def test_create_email_service_from_config_failure(self):
         """Test creating email service from invalid config"""
         config = {}  # Missing required fields
-        
-        # This will actually create a service with None values - not ideal but current behavior
+
         email_service = create_email_service_from_config(config)
         
-        assert email_service is not None
-        assert email_service.smtp_host is None
-        assert email_service.username is None
-        assert email_service.password is None
+        assert email_service is None
 
 
 class TestEmailServiceTestConnection:

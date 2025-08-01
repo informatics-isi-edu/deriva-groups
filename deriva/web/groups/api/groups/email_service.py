@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 class EmailService:
     def __init__(self, smtp_host: str, smtp_port: int, username: str, password: str, 
                  use_tls: bool = True, use_ssl: bool = False, from_email: Optional[str] = None):
+        if not (smtp_host and smtp_port and username and password):
+            raise ValueError("smtp_host, smtp_port, username and password are required to configure the EmailService")
+
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
         self.username = username
