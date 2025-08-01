@@ -27,8 +27,17 @@ logger = logging.getLogger(__name__)
 class EmailService:
     def __init__(self, smtp_host: str, smtp_port: int, username: str, password: str, 
                  use_tls: bool = True, use_ssl: bool = False, from_email: Optional[str] = None):
-        if not (smtp_host and smtp_port and username and password):
-            raise ValueError("smtp_host, smtp_port, username and password are required to configure the EmailService")
+
+        required_fields = {
+            "smtp_host": smtp_host,
+            "smtp_port": smtp_port,
+            "username": username,
+            "password": password
+        }
+
+        missing = [key for key, value in required_fields.items() if not value]
+        if missing:
+            raise ValueError(f"Missing required email service configuration fields: {', '.join(missing)}")
 
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
