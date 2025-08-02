@@ -334,5 +334,5 @@ def create_email_service_from_config(config: dict) -> Optional[EmailService]:
             from_email=config.get('smtp_from_email')
         )
     except Exception as e:
-        logger.error(f"Failed to create email service: {e}")
+        logger.warning(f"Failed to create email service: {e}")
         return None

@@ -99,7 +99,8 @@ def create_group():
     user_groups = group_manager.get_user_groups(g.user_id)
     ids.extend([group[0].id for group in user_groups])
     acl_list = current_app.config["GROUPS_CONFIG"].get("create_group_acl", [])
-    if not group_manager.can_create_group(ids, acl_list):
+    if (not group_manager.can_create_group(ids, acl_list) and
+            not current_app.config.get("ALL_AUTHENTICATED_USERS_CAN_CREATE", False)):
         abort(403, "Group creation not permitted")
 
     # Create group
