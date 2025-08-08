@@ -34,6 +34,7 @@ dependencies = [
   "tzlocal",
   "redis",
   "valkey",
+  "psycopg2",
   "python-dotenv",
   "python-json-logger"
 ]
