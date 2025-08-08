@@ -17,5 +17,6 @@
 STORAGE_BACKENDS = {
     "redis": "deriva.web.groups.api.storage.backends.redis.RedisBackend",
     "sqlite": "deriva.web.groups.api.storage.backends.sqlite.SQLiteBackend",
+    "postgresql": "deriva.web.groups.api.storage.backends.postgresql.PostgreSQLBackend",
     "memory": "deriva.web.groups.api.storage.backends.memory.MemoryBackend"
 }
