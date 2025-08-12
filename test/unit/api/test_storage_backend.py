@@ -20,14 +20,19 @@ import redis
 import valkey
 import uuid
 import time
+import testing.postgresql
 from deriva.web.groups.api.storage.backends.memory import MemoryBackend
 from deriva.web.groups.api.storage.backends.redis import RedisBackend
 from deriva.web.groups.api.storage.backends.sqlite import SQLiteBackend
+from deriva.web.groups.api.storage.backends.postgresql import PostgreSQLBackend
+
+postgresql = testing.postgresql.Postgresql()
 
 @pytest.fixture(params=[
     "memory",
     "redis",
-    "sqlite"
+    "sqlite",
+    "postgresql",
 ], ids=lambda name: name)
 def backend(request, monkeypatch):
     """
@@ -43,6 +48,8 @@ def backend(request, monkeypatch):
         return RedisBackend(url="redis://fake")
     elif request.param == "sqlite":
         return SQLiteBackend()
+    elif request.param == "postgresql":
+        return PostgreSQLBackend(url=postgresql.url())
     else:
         raise RuntimeError("Unsupported backend")
 

@@ -19,15 +19,29 @@ import time
 import uuid
 import redis
 import fakeredis
+import testing.postgresql
 from deriva.web.groups.api.storage.core import Storage, create_storage_backend
 from deriva.web.groups.api.storage.backends.memory import MemoryBackend
 from deriva.web.groups.api.storage.backends.redis import RedisBackend
 from deriva.web.groups.api.storage.backends.sqlite import SQLiteBackend
+from deriva.web.groups.api.storage.backends.postgresql import PostgreSQLBackend
 from deriva.web.groups.api.groups.models import (
     Group, GroupMembership, GroupInvitation, JoinRequest,
     GroupRole, InvitationStatus, JoinRequestStatus
 )
 
+class _PostgreSQLBackend(PostgreSQLBackend):
+
+    def __init__(self):
+        _postgresql = testing.postgresql.Postgresql()
+        super(_PostgreSQLBackend, self).__init__(url=_postgresql.url())
+        # save a reference to our test DB so it isn't reaped before us
+        self._testing_postgresql = _postgresql
+
+    def close(self):
+        self._testing_postgresql.stop()
+        del self._testing_postgresql
+        super(_PostgreSQLBackend, self).close()
 
 class TestCreateStorageBackend:
     """Test storage backend creation"""
@@ -42,10 +56,10 @@ class TestCreateStorageBackend:
         with pytest.raises(KeyError):
             create_storage_backend("invalid_backend")
 
-
 @pytest.fixture(params=[
     "redis",
     "sqlite",
+    "postgresql",
     "memory"],
     ids=lambda val: val, scope="function")
 def storage(request, monkeypatch):
@@ -62,6 +76,8 @@ def storage(request, monkeypatch):
         backend = RedisBackend(url="redis://fake")
     elif backend_type.startswith("sqlite"):
         backend = SQLiteBackend()
+    elif backend_type.startswith("postgresql"):
+        backend = _PostgreSQLBackend()
     elif backend_type.startswith("memory"):
         backend = MemoryBackend()
     else:
