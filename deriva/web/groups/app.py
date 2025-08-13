@@ -17,7 +17,7 @@ import os
 import json
 import logging
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
@@ -34,13 +34,20 @@ from .api.util import SessionManager
 
 logger = logging.getLogger(__name__)
 
-
-def configure_authn_env() -> None:
+def load_config(app):
     """
-    Load DERIVA_GROUPS_* env vars from a .env file if present, otherwise
-    fall back to sane defaults for any keys still unset.
+    Load app.config with DERIVA_GROUPS_* variables from OS environment, .env file, else sane defaults.
+
     Hostname for URLs is taken from CONTAINER_HOSTNAME or system hostname.
     """
+    # Defaults for any missing DERIVA_GROUPS_* vars
+    env_config = {
+        "DERIVA_GROUPS_STORAGE_BACKEND": "memory",
+        "DERIVA_GROUPS_CORS_ORIGINS": "",
+        "DERIVA_GROUPS_AUDIT_USE_SYSLOG": "false",
+        "DERIVA_GROUPS_AUDIT_LOGFILE_PATH": "/var/log/deriva-groups-audit.log"
+    }
+
     # Load .env from one of these locations, if it exists
     dotenv_locations = [
         Path("/etc/deriva/deriva_groups.env"),
@@ -51,24 +58,19 @@ def configure_authn_env() -> None:
     for fn in dotenv_locations:
         if fn.is_file():
             fp = str(fn)
-            load_dotenv(dotenv_path=fp, override=False)
+            env_config.update(dotenv_values(dotenv_path=fp))
             logger.info(f"Loaded dotenv configuration file from: {fp}")
             break
 
-    # Defaults for any missing DERIVA_GROUPS_* vars
-    defaults = {
-        "DERIVA_GROUPS_STORAGE_BACKEND": "memory",
-        "DERIVA_GROUPS_CORS_ORIGINS": "",
-        "DERIVA_GROUPS_AUDIT_USE_SYSLOG": "false",
-        "DERIVA_GROUPS_AUDIT_LOGFILE_PATH": "/var/log/deriva-groups-audit.log"
-    }
-    for key, fallback in defaults.items():
-        os.environ.setdefault(key, fallback)
+    env_config.update(os.environ.items())
 
-
-def load_config(app):
-    configure_authn_env()
-    app.config.from_prefixed_env(prefix="DERIVA_GROUPS")
+    _ENV_PREFIX = "DERIVA_GROUPS_"
+    app.config.update({
+        # strip _ENV_PREFIX from env keys
+        (k[len(_ENV_PREFIX):], v)
+        for k, v in env_config.items()
+        if k.startswith(_ENV_PREFIX)
+    })
 
     legacy_mode = app.config.get("ENABLE_LEGACY_AUTH_API", False)
     if not app.config.get("COOKIE_NAME"):
@@ -77,7 +79,7 @@ def load_config(app):
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_prefixed_env(prefix="DERIVA_GROUPS")
+    load_config(app)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", force=True)
     logging.getLogger("deriva.web.groups").setLevel(
         logging.DEBUG if app.config.get("DERIVA_GROUPS_DEBUG", app.config.get("DEBUG", False)) else logging.INFO)
