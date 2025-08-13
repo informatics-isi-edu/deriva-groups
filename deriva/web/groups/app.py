@@ -37,8 +37,6 @@ logger = logging.getLogger(__name__)
 def load_config(app):
     """
     Load app.config with DERIVA_GROUPS_* variables from OS environment, .env file, else sane defaults.
-
-    Hostname for URLs is taken from CONTAINER_HOSTNAME or system hostname.
     """
     # Defaults for any missing DERIVA_GROUPS_* vars
     env_config = {
