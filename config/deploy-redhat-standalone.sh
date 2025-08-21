@@ -51,13 +51,28 @@ idempotent_semanage_add()
 
 [[ -r /etc/redhat-release ]] || error Failed to find /etc/redhat-release
 
+detect_psycopg2()
+{
+    found=$(rpm -q -a | grep '^python3[.0-9]*-psycopg2')
+    [[ -n "$found" ]] || error Please install an appropriate python3*-psycopg2 RPM for this distro and your chosen Python 3 runtime
+    echo "found $found"
+}
+
+detect_mod_wsgi()
+{
+    found=$(rpm -q -a | grep '^python3[.0-9]*-mod_wsgi')
+    [[ -n "$found" ]] || error Please install an appropriate python3*-mod_wsgi RPM for this distro and your chosen Python 3 runtime
+    echo "found $found"
+}
+
 # whitelist systems we think ought to work with this script
 case "$(cat /etc/redhat-release)" in
     Rocky\ Linux\ release\ 8*)
-        :
-        ;;
+        detect_psycopg2
+	detect_mod_wsgi
+	;;
     Fedora\ release\ 4*)
-        :
+	detect_mod_wsgi
         ;;
     *)
         error Failed to detect a tested Red Hat OS variant
@@ -101,6 +116,25 @@ mkdir -p /home/derivagrps/state \
     && chmod u=rxw,g=rwx,o= /home/derivagrps/state \
 	|| error Failed to provision /home/derivagrps/state sub-dir
 
+pgusercnt=$(su -c "psql -q -t -A -c \"SELECT count(*) FROM pg_roles WHERE rolname = 'derivagrps'\"" - postgres)
+if [[ $? -ne 0 ]]
+then
+    error Failed to test for presence of derivagrps postgresql role
+fi
+
+[[ $pgusercnt -eq 1 ]] \
+    || su -c "createuser -d -R -S derivagrps" - postgres \
+    || error Failed to create derivagrps postgresql role
+
+pgdbcnt=$(su -c "psql -q -t -A -c \"SELECT count(*) FROM pg_database WHERE datname = 'derivagrps'\"" - postgres)
+if [[ $? -ne 0 ]]
+then
+    error Failed to test for presence of derivagrps postgresql DB
+fi
+
+[[ $pgdbcnt -eq 1 ]] \
+    || su -c "createdb -O derivagrps derivagrps" - postgres \
+    || error Failed to create derivagrps postgresql DB
 
 # idempotently deploy default configs
 [[ -f /etc/httpd/conf.d/wsgi_deriva_groups.conf ]] \
@@ -115,8 +149,8 @@ DERIVA_GROUPS_AUTH_BASE_URL="https://$(hostname)/authn"
 DERIVA_GROUPS_AUDIT_USE_SYSLOG=true
 DERIVA_GROUPS_ENABLE_LEGACY_AUTH_API=true
 DERIVA_GROUPS_AUTH_ALLOW_BYPASS_CERT_VERIFY=false
-DERIVA_GROUPS_STORAGE_BACKEND=sqlite
-DERIVA_GROUPS_STORAGE_BACKEND_URL=/home/derivagrps/state/deriva-groups-sqlite.db
+DERIVA_GROUPS_STORAGE_BACKEND=postgresql
+DERIVA_GROUPS_STORAGE_BACKEND_URL=postgresql:///derivagrps
 EOF
 [[ $? = 0 ]] || error Failed to create ${TMP_ENV}
 
