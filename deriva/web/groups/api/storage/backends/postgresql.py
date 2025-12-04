@@ -117,6 +117,7 @@ class PostgreSQLBackend:
                 result = resultfunc(cur)
                 conn.commit()
             self._put_conn(conn)
+            conn = None
             return result
         except Exception as e:
             error = e
