@@ -89,10 +89,10 @@ class PostgreSQLBackend:
         conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_REPEATABLE_READ)
         return conn
 
-    def _put_conn(self, conn):
+    def _put_conn(self, conn, close=False):
         if conn is not None:
-            logger.debug(f"Returning connection to pool dsn={conn.dsn} status={conn.status}")
-            self.pool.putconn(conn)
+            logger.debug(f"Returning connection to pool dsn={conn.dsn} status={conn.status} close={close}")
+            self.pool.putconn(conn, close=close)
 
     def close(self):
         """
@@ -108,13 +108,23 @@ class PostgreSQLBackend:
     def _pooled_execute_stmt(self, sql, params, resultfunc=lambda cur: None):
         """Execute and commit one statement on a pooled connection, returning result of resultfunc applied to cursor.
         """
-        conn = self._get_conn()
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            result = resultfunc(cur)
-            conn.commit()
-        self._put_conn(conn)
-        return result
+        conn = None
+        error = 'unknown error'
+        try:
+            conn = self._get_conn()
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                result = resultfunc(cur)
+                conn.commit()
+            self._put_conn(conn)
+            return result
+        except Exception as e:
+            error = e
+            raise
+        finally:
+            if conn is not None:
+                logger.warning(f"Closing pooled connection due to error={error}")
+                self._put_conn(conn, close=True)
 
     def setex(self, key: str, value: Union[str, bytes], ttl: int) -> None:
         expires_at = time.time() + ttl
